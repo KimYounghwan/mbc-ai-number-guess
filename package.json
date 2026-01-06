@@ -1,0 +1,13 @@
+
+{
+  "name": "gemini-number-quest",
+  "version": "1.0.0",
+  "description": "Gemini AI를 활용한 숫자 맞추기 게임",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx servor"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT"
+}

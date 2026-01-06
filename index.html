@@ -1,0 +1,142 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini's Number Quest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+</head>
+<body class="antialiased">
+    <div id="app" class="max-w-4xl mx-auto px-4 py-12 min-h-screen flex flex-col justify-center">
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <h1 class="text-5xl font-black mb-4 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+                숫자맞추기 게임
+            </h1>
+            <p class="text-slate-400 text-lg">AI 마스터와 함께하는 숫자 맞추기 게임</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Main Game Area -->
+            <div class="md:col-span-2 space-y-6">
+                <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-8 border border-slate-700/50 shadow-2xl relative overflow-hidden">
+                    <!-- Status Indicator -->
+                    <div class="flex items-center justify-between mb-8">
+                        <div id="attempt-badge" class="px-4 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-semibold border border-blue-500/30">
+                            시도 횟수: 0
+                        </div>
+                        <div class="text-slate-500 text-sm">범위: 1 - 100</div>
+                    </div>
+
+                    <h2 id="status-message" class="text-2xl font-bold text-center mb-6 min-h-[3rem]">
+                        1에서 100 사이의 숫자를 맞춰보세요!
+                    </h2>
+
+                    <!-- Game Input Section -->
+                    <div id="input-container">
+                        <form id="guess-form" class="flex gap-4">
+                            <input
+                                id="guess-input"
+                                type="number"
+                                min="1"
+                                max="100"
+                                required
+                                placeholder="숫자 입력..."
+                                class="flex-1 bg-slate-900/50 border border-slate-700 rounded-2xl px-6 py-4 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-white placeholder:text-slate-600"
+                            />
+                            <button
+                                type="submit"
+                                class="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold py-4 px-10 rounded-2xl shadow-lg transform active:scale-95 transition-all text-xl"
+                            >
+                                확인
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Reset Button (Hidden by default) -->
+                    <div id="reset-container" class="hidden text-center py-4">
+                        <button
+                            id="reset-btn"
+                            class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 px-12 rounded-2xl shadow-xl transform hover:scale-105 active:scale-95 transition-all text-xl"
+                        >
+                            다시 시작하기
+                        </button>
+                    </div>
+
+                    <!-- AI Assistant Bubble -->
+                    <div class="mt-12 p-6 bg-slate-900/80 rounded-2xl border border-blue-500/20 relative">
+                        <div class="absolute -top-3 left-6 px-2 py-0.5 bg-blue-600 text-[10px] font-bold rounded-md uppercase tracking-widest">
+                            Gemini Master
+                        </div>
+                        <p id="ai-commentary" class="text-slate-200 leading-relaxed italic">
+                            "안녕! 나는 너의 게임 마스터 제미나이야. 행운을 빌어!"
+                        </p>
+                        
+                        <div id="hint-action-container">
+                            <button 
+                                id="get-hint-btn"
+                                class="mt-4 text-sm text-blue-400 hover:text-blue-300 font-semibold underline decoration-dotted transition-colors"
+                            >
+                                힌트가 필요하신가요?
+                            </button>
+                        </div>
+                        
+                        <div id="hint-display" class="hidden mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-sm text-blue-300">
+                            💡 <strong>Secret Hint:</strong> <span id="hint-text"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Area -->
+            <div class="space-y-6">
+                <div class="bg-slate-800/30 backdrop-blur-md rounded-3xl p-6 border border-slate-700/30 h-full max-h-[600px] flex flex-col">
+                    <h3 class="text-xl font-bold mb-6 flex items-center">
+                        <span class="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
+                        추측 기록
+                    </h3>
+                    <div id="history-list" class="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-slate-700">
+                        <div class="text-center text-slate-600 py-10 italic">
+                            아직 기록이 없습니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-16 text-center text-slate-600 text-sm">
+            Powered by Gemini 3 Flash • Built with Vanilla JS & Tailwind
+        </footer>
+    </div>
+
+    <script type="module" src="index.js"></script>
+</body>
+</html>
