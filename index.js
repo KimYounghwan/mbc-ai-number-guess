@@ -5,7 +5,7 @@ import { GoogleGenAI } from "@google/genai";
  * 배포 환경(Vercel 등)에서는 process.env.API_KEY를 통해 키를 주입받습니다.
  * 로컬 테스트 시에는 개발 도구가 이를 처리합니다.
  */
-const apiKey = process.env.API_KEY;
+const apiKey = "AIzaSyBrDYJGqDcGAKLEoBX2_IyaapO_JlmvTl8";
 const aiClient = new GoogleGenAI({ apiKey });
 
 // Game State
